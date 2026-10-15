@@ -295,6 +295,9 @@
                 </div>
             </div>
             <div class="flex items-center gap-2.5 pointer-events-auto">
+                <button id="btn-pause" type="button" onclick="window.Game.togglePause()" title="Pausa [ESC / P]" class="hidden px-glass w-9 h-9 items-center justify-center text-[#ffd000] active:translate-y-px cursor-pointer" style="--k:#ffd000">
+                    <i class="ph-fill ph-pause text-base"></i>
+                </button>
                 <button type="button" onclick="window.UI.openModal('modal-pwa')" title="Impostazioni e salvataggio" class="px-glass w-9 h-9 flex items-center justify-center text-indigo-200 active:translate-y-px cursor-pointer" style="--k:#818cf8">
                     <i class="ph-bold ph-gear-six text-base"></i>
                 </button>
@@ -512,6 +515,39 @@
             </div>
         </div>
 
+        <!-- ================= OVERLAY PAUSA ================= -->
+        <div id="screen-pause" class="hidden absolute inset-0 z-[45] bg-[#06050c]/90 backdrop-blur-sm flex-col items-center justify-center p-5 text-center">
+            <div class="font-pixel-title text-[9px] text-[#00f5d4] tracking-[0.25em] mb-2">&#9208; INCONTRO IN SOSPESO</div>
+            <h2 class="font-pixel-title logo-px text-3xl text-white leading-none mb-6">PAUSA</h2>
+
+            <div class="px-panel p-3 w-full max-w-[320px] grid grid-cols-3 gap-2 mb-5" style="--k:#ffd000">
+                <div>
+                    <div class="text-[8px] text-zinc-400">PUNTI</div>
+                    <div id="pause-score" class="font-pixel-num text-xl leading-none text-white mt-0.5">0</div>
+                </div>
+                <div>
+                    <div class="text-[8px] text-zinc-400">COMBO</div>
+                    <div id="pause-combo" class="font-pixel-num text-xl leading-none text-[#00f5d4] mt-0.5">0</div>
+                </div>
+                <div>
+                    <div class="text-[8px] text-zinc-400">MONETE</div>
+                    <div id="pause-coins" class="font-pixel-num text-xl leading-none text-[#ffd000] mt-0.5">+0</div>
+                </div>
+            </div>
+
+            <div class="w-full max-w-[320px] space-y-3">
+                <button type="button" onclick="window.Game.resume()" class="fight-btn w-full py-4 px-btn bg-gradient-to-r from-[#00f5d4] via-[#ffd000] to-[#ff2a85] text-[#05040a] font-pixel-title text-[12px] tracking-wider flex items-center justify-center gap-3 cursor-pointer overflow-hidden">
+                    <i class="ph-fill ph-play text-xl relative z-10"></i>
+                    <span class="relative z-10">RIPRENDI</span>
+                </button>
+                <button id="btn-harakiri" type="button" onclick="window.Game.confirmHarakiri()" class="w-full py-3.5 px-btn bg-rose-800 text-rose-100 font-pixel-title text-[9px] flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="ph-fill ph-skull text-base"></i>
+                    <span id="btn-harakiri-label">HARAKIRI &middot; K.O. E TORNA AL MENU</span>
+                </button>
+                <p class="text-[9px] text-zinc-500 leading-relaxed">Con l'harakiri l'incontro termina subito: punti e monete guadagnati vengono comunque salvati.</p>
+            </div>
+        </div>
+
         <!-- ================= MODAL: ROSTER BRAWLERS & SKIN ================= -->
         <div id="modal-brawlers" class="hidden absolute inset-0 z-50 bg-[#06050c]/95 backdrop-blur-md flex-col p-3.5">
             <div class="flex items-center justify-between pb-2 border-b border-[#282344] shrink-0">
@@ -519,9 +555,15 @@
                     <h3 class="font-pixel-title text-xs text-[#00f5d4]">ROSTER // 5 FIGHTERS</h3>
                     <p class="text-[10px] text-zinc-400">Tocca un guerriero per provarne Stili Colore e Super</p>
                 </div>
-                <button type="button" onclick="window.UI.closeModals()" class="rounded-xl px-btn bg-[#ff2a85] text-white w-8 h-8 flex items-center justify-center cursor-pointer">
-                    ✕
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                    <div class="px-glass px-2.5 py-1 flex items-center gap-1.5" style="--k:#ffd000" title="Saldo monete">
+                        <span class="coin-px"></span>
+                        <span class="js-currency font-pixel-num text-xl leading-none text-[#ffd000] tracking-wider">0</span>
+                    </div>
+                    <button type="button" onclick="window.UI.closeModals()" class="rounded-xl px-btn bg-[#ff2a85] text-white w-8 h-8 flex items-center justify-center cursor-pointer">
+                        ✕
+                    </button>
+                </div>
             </div>
 
             <!-- Mini Stage Pixel per testare dal vivo le animazioni del Brawler -->
@@ -588,7 +630,13 @@
                     <h3 class="font-pixel-title text-xs text-[#ffd000]">DOJO SHOP</h3>
                     <p class="text-[10px] text-zinc-400">Potenziamenti permanenti e gadget monouso</p>
                 </div>
-                <button type="button" onclick="window.UI.closeModals()" class="rounded-xl px-btn bg-[#ff2a85] text-white w-9 h-9 flex items-center justify-center cursor-pointer">✕</button>
+                <div class="flex items-center gap-2 shrink-0">
+                    <div class="px-glass px-2.5 py-1 flex items-center gap-1.5" style="--k:#ffd000" title="Saldo monete">
+                        <span class="coin-px"></span>
+                        <span class="js-currency font-pixel-num text-xl leading-none text-[#ffd000] tracking-wider">0</span>
+                    </div>
+                    <button type="button" onclick="window.UI.closeModals()" class="rounded-xl px-btn bg-[#ff2a85] text-white w-9 h-9 flex items-center justify-center cursor-pointer">✕</button>
+                </div>
             </div>
             <div class="flex-1 overflow-y-auto space-y-2 my-3 pr-1">
                 <div class="text-[10px] text-[#ffd000] font-bold tracking-wider">POTENZIAMENTI PERMANENTI</div>
@@ -2873,7 +2921,10 @@
                     // Salva automaticamente anche quando la scheda viene nascosta o chiusa su mobile/desktop
                     window.addEventListener('pagehide', () => this.save(true));
                     document.addEventListener('visibilitychange', () => {
-                        if (document.visibilityState === 'hidden') this.save(true);
+                        if (document.visibilityState === 'hidden') {
+                            this.save(true);
+                            if (window.Game && Game.state === 'PLAYING') Game.pause();
+                        }
                     });
 
                     UI.refreshHeader();
@@ -3433,6 +3484,7 @@
                 refreshHeader() {
                     const s = SaveSystem.data;
                     document.getElementById('ui-currency').textContent = s.currency;
+                    document.querySelectorAll('.js-currency').forEach(el => { el.textContent = s.currency.toLocaleString('it-IT'); });
                     document.getElementById('ui-highscore').textContent = s.highScore;
 
                     const b = BRAWLERS[s.selectedBrawler] || BRAWLERS.ryuji;
@@ -3485,6 +3537,7 @@
                 },
 
                 openModal(id) {
+                    if (window.Game && Game.state === 'PLAYING' && !Game.paused) Game.pause();
                     this.closeModals();
                     if (id === 'modal-brawlers') {
                         this.previewBrawlerId = SaveSystem.data.selectedBrawler;
@@ -3810,6 +3863,7 @@
 
             const Game = {
                 state: 'MENU',
+                paused: false,
                 width: 400,
                 height: 750,
                 centerX: 200,
@@ -3959,7 +4013,7 @@
                             return;
                         }
 
-                        if (this.state !== 'PLAYING') return;
+                        if (this.state !== 'PLAYING' || this.paused) return;
                         const side = x < rect.width / 2 ? 'left' : 'right';
                         this.registerTap(side);
                     });
@@ -3970,7 +4024,12 @@
                             this.startRun();
                             return;
                         }
-                        if (this.state !== 'PLAYING') return;
+                        if (this.state === 'PLAYING' && !e.repeat && (e.code === 'Escape' || e.code === 'KeyP')) {
+                            e.preventDefault();
+                            this.togglePause();
+                            return;
+                        }
+                        if (this.state !== 'PLAYING' || this.paused) return;
                         if (e.repeat) return;
 
                         if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
@@ -3988,7 +4047,7 @@
 
                 handleControlBtn(event, action) {
                     if (event) event.preventDefault();
-                    if (this.state !== 'PLAYING') return;
+                    if (this.state !== 'PLAYING' || this.paused) return;
                     if (action === 'both') this.executeSimultaneousAction();
                     else this.registerTap(action);
                 },
@@ -4019,6 +4078,8 @@
                 },
 
                 startRun() {
+                    this._harakiriExit = false;
+                    this.hidePauseUI();
                     clearTimeout(this._koShowTimer);
                     this.koTimer = 0;
                     UI.closeModals();
@@ -4075,6 +4136,8 @@
                     this.spawnTimer = 0.35;
 
                     this.state = 'PLAYING';
+                    this.paused = false;
+                    this.setPauseBtn(true);
                     this.resize();
                     document.getElementById('screen-menu').classList.add('hidden');
                     document.getElementById('screen-gameover').classList.add('hidden');
@@ -4088,6 +4151,9 @@
                 },
 
                 backToMenu() {
+                    this._harakiriExit = false;
+                    this.hidePauseUI();
+                    this.setPauseBtn(false);
                     clearTimeout(this._koShowTimer);
                     this.koTimer = 0;
                     this.state = 'MENU';
@@ -4101,8 +4167,77 @@
                     UI.refreshHeader();
                 },
 
+                // ===== PAUSA =====
+                setPauseBtn(show) {
+                    const b = document.getElementById('btn-pause');
+                    if (!b) return;
+                    b.classList.toggle('hidden', !show);
+                    b.classList.toggle('flex', !!show);
+                },
+
+                hidePauseUI() {
+                    this.paused = false;
+                    clearTimeout(this._harakiriTimer);
+                    this.resetHarakiriBtn();
+                    const el = document.getElementById('screen-pause');
+                    if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+                },
+
+                resetHarakiriBtn() {
+                    this._harakiriArmed = false;
+                    const lbl = document.getElementById('btn-harakiri-label');
+                    if (lbl) lbl.innerHTML = 'HARAKIRI &middot; K.O. E TORNA AL MENU';
+                },
+
+                pause() {
+                    if (this.state !== 'PLAYING' || this.paused) return;
+                    this.paused = true;
+                    clearTimeout(this.pendingTapTimeout);
+                    this.pendingTapSide = null;
+                    document.getElementById('pause-score').textContent = this.score.toLocaleString('it-IT');
+                    document.getElementById('pause-combo').textContent = this.combo;
+                    document.getElementById('pause-coins').textContent = '+' + this.coinsRun.toLocaleString('it-IT');
+                    this.resetHarakiriBtn();
+                    const el = document.getElementById('screen-pause');
+                    el.classList.remove('hidden');
+                    el.classList.add('flex');
+                },
+
+                resume() {
+                    if (this.state !== 'PLAYING' || !this.paused) return;
+                    UI.closeModals();
+                    this.hidePauseUI();
+                    Sound.ensureCtx();
+                },
+
+                togglePause() {
+                    if (this.state !== 'PLAYING') return;
+                    if (this.paused) this.resume(); else this.pause();
+                },
+
+                // Due tocchi per evitare di abbandonare per sbaglio
+                confirmHarakiri() {
+                    if (!this._harakiriArmed) {
+                        this._harakiriArmed = true;
+                        document.getElementById('btn-harakiri-label').textContent = 'SICURO? TOCCA ANCORA';
+                        clearTimeout(this._harakiriTimer);
+                        this._harakiriTimer = setTimeout(() => this.resetHarakiriBtn(), 3000);
+                        return;
+                    }
+                    this.harakiri();
+                },
+
+                harakiri() {
+                    if (this.state !== 'PLAYING' || !this.paused) return;
+                    this.hidePauseUI();
+                    // Al termine dell'animazione K.O. si va in home invece che al pannello Game Over
+                    this._harakiriExit = true;
+                    this.endRun(); // registra punti, monete e avanzamento cassa
+                    Sound.play('hurt');
+                },
+
                 executeSingleAttack(side) {
-                    if (this.state !== 'PLAYING' || this.whiffTimer > 0) return;
+                    if (this.state !== 'PLAYING' || this.paused || this.whiffTimer > 0) return;
 
                     const dir = side === 'left' ? -1 : 1;
                     this.playerFacing = dir;
@@ -4164,7 +4299,7 @@
                 },
 
                 executeSimultaneousAction() {
-                    if (this.state !== 'PLAYING' || this.whiffTimer > 0) return;
+                    if (this.state !== 'PLAYING' || this.paused || this.whiffTimer > 0) return;
 
                     if (this.fury >= this.furyMax) {
                         this.activateOverdrive();
@@ -4478,6 +4613,8 @@
 
                 endRun() {
                     if (this.state === 'GAMEOVER') return;
+                    this.hidePauseUI();
+                    this.setPauseBtn(false);
                     this.state = 'GAMEOVER';
                     this.koTimer = 0.0001;
                     this.animState = 'KO';
@@ -4495,6 +4632,7 @@
                     const totalCoins = Math.round(subtotal * (1 + sponsorPct / 100));
 
                     s.currency += totalCoins;
+                    this.lastTotalCoins = totalCoins;
                     const newCrates = SaveSystem.addCumulativeScore(this.score);
                     SaveSystem.save();
 
@@ -4510,6 +4648,12 @@
                     clearTimeout(this._koShowTimer);
                     this._koShowTimer = setTimeout(() => {
                         if (this.state !== 'GAMEOVER') return;
+                        if (this._harakiriExit) {
+                            this._harakiriExit = false;
+                            this.backToMenu();
+                            UI.showToast('HARAKIRI! +' + (this.lastTotalCoins || 0).toLocaleString('it-IT') + ' CR');
+                            return;
+                        }
                         const goScreen = document.getElementById('screen-gameover');
                         goScreen.classList.remove('hidden');
                         goScreen.classList.add('flex');
@@ -4584,6 +4728,7 @@
                 },
 
                 update(dt) {
+                    if (this.paused) return;
                     this.shakeX *= 0.8;
                     this.shakeY *= 0.8;
 
