@@ -903,14 +903,14 @@
 
             // Cuore pixel-art 7x6 (SVG a pixel netti)
             const HEART_ROWS = ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...'];
-            function heartSvg(active) {
+            function heartSvg(active, bonus = false) {
                 let r = '';
                 HEART_ROWS.forEach((row, y) => {
                     for (let x = 0; x < row.length; x++) {
                         if (row[x] === 'X') r += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
                     }
                 });
-                const fill = active ? '#ff2a85' : '#2a2545';
+                const fill = active ? (bonus ? '#ffd000' : '#ff2a85') : '#2a2545';
                 const shine = active ? '<rect x="1" y="1" width="1" height="1" fill="#ffffff"/>' : '';
                 return `<svg viewBox="0 0 7 6" width="28" height="24" shape-rendering="crispEdges" style="filter:drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000) drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000)"><g fill="${fill}">${r}</g>${shine}</svg>`;
             }
@@ -3035,6 +3035,14 @@
             const SUPERCHARGED_CRATE_CHANCE = 0.20;
             const SC_EXTRA_BAR = 30; // colpi extra rispetto alla barra Super normale
 
+            // Respiro dopo aver perso un cuore
+            const HURT_GRACE_TIME = 1.6;     // secondi di invulnerabilità
+            const HURT_KNOCKBACK = 150;      // i nemici vengono spinti indietro di tanti px
+            const HURT_SPAWN_DELAY = 1.1;    // pausa nello spawn di nuovi nemici
+            // Cuori trovati nei nemici
+            const HEART_SCORE_STEP = 3000;   // ogni 3.000 punti in partita arriva un nemico-cuore
+            const HEART_BONUS_CAP = 2;       // massimo di cuori EXTRA oltre i cuori massimi
+
             const SC_INFO = {
                 ryuji:   { name: 'DOPPIO DRAGO',      desc: 'Seconda onda dopo 1,2s: spazza via anche i nemici appena arrivati.' },
                 vex:     { name: 'CHRONO ULTRA',      desc: 'Nemici rallentati del 65% per 5,5s e timer combo congelato.' },
@@ -4214,6 +4222,10 @@
                 superReadyNotified: false,
                 superFlashTimer: 0,
                 overdriveTimer: 0,
+                hurtGrace: 0,
+                heartPending: false,
+                nextHeartScore: HEART_SCORE_STEP,
+                heartCap: 2 + HEART_BONUS_CAP,
                 furyS: 0,
                 furySMax: 66,
                 isSC: false,
@@ -4416,6 +4428,10 @@
 
                     this.maxHp = (brawler.id === 'kitsune') ? 1 : (2 + (s.upgrades.maxHp || 0));
                     this.hp = this.maxHp;
+                    this.heartCap = this.maxHp + HEART_BONUS_CAP;
+                    this.hurtGrace = 0;
+                    this.heartPending = false;
+                    this.nextHeartScore = HEART_SCORE_STEP;
 
                     const baseRange = Math.min(Math.floor(this.width * 0.42), 148 + (s.upgrades.hitRange || 0) * 8);
                     this.hitRange = brawler.id === 'titan' ? Math.floor(baseRange * 0.88) : baseRange;
@@ -4869,6 +4885,15 @@
                     else if (this.elapsedTime > 18 && r >= 0.38 && r < 0.50) type = 'charger';
                     else if (this.elapsedTime > 10 && r >= 0.95) type = 'golden';
 
+                    // Soglia raggiunta: il prossimo nemico porta un cuore (solo se c'è spazio per curarsi)
+                    let heartCarrier = false;
+                    if (this.heartPending && this.hp < this.heartCap) {
+                        type = 'striker';
+                        heartCarrier = true;
+                        this.heartPending = false;
+                        this.spawnFloatingText(this.centerX, this.groundY - 150, '❤ NEMICO CUORE!', '#ff6fa8');
+                    }
+
                     const speedScale = 1 + Math.min(1.15, this.elapsedTime / 90);
                     let hp = 1, speed = 132 * speedScale, color = '#38bdf8', baseScore = 10;
                     // Palette Punk Cyber con cresta neon ciano, visore bianco e giubbotto scuro
@@ -4900,6 +4925,8 @@
                         palette = { suit: '#ffd000', shade: '#ca8a04', skin: '#ffffff', band: '#00f5d4', belt: '#ff2a85' };
                     }
 
+                    if (heartCarrier) speed *= 0.85;
+
                     this.enemies.push({
                         side,
                         x: spawnX,
@@ -4913,11 +4940,24 @@
                         baseScore,
                         jumped: false,
                         spinAngle: 0,
-                        flashTimer: 0
+                        flashTimer: 0,
+                        heart: heartCarrier
                     });
                 },
 
+                collectHeart(enemy) {
+                    enemy.heart = false;
+                    if (this.hp >= this.heartCap) return;
+                    this.hp++;
+                    const bonus = this.hp > this.maxHp;
+                    Sound.play('superReady');
+                    this.spawnParticles(this.centerX + enemy.x, this.groundY - 40, bonus ? '#ffd000' : '#ff2a85', 14);
+                    this.spawnFloatingText(this.centerX, this.groundY - 100, bonus ? '+1 CUORE EXTRA!' : '+1 CUORE!', bonus ? '#ffd000' : '#ff6fa8');
+                    this.updateHUD();
+                },
+
                 spawnRagdoll(enemy, dir) {
+                    if (enemy.heart) this.collectHeart(enemy);
                     let spriteMat = ENEMY_SPRITES.STRIKER_0;
                     if (enemy.type === 'tank') spriteMat = ENEMY_SPRITES.TANK_0;
                     else if (enemy.type === 'ninja') spriteMat = ENEMY_SPRITES.NINJA_0;
@@ -4960,6 +5000,14 @@
                 takeDamage(enemy) {
                     if (this.state !== 'PLAYING') return;
                     this.enemies = this.enemies.filter(e => e !== enemy);
+
+                    // Respiro: durante l'invulnerabilità i nemici che arrivano vengono respinti senza danno
+                    if (this.hurtGrace > 0) {
+                        enemy.heart = false;
+                        this.spawnRagdoll(enemy, enemy.side === 'left' ? -1 : 1);
+                        this.updateHUD();
+                        return;
+                    }
 
                     if (this.overdriveType === 'titan') {
                         const dir = enemy.side === 'left' ? -1 : 1;
@@ -5011,10 +5059,22 @@
 
                     this.combo = 0;
                     this.recalcMultiplier();
+
+                    if (this.hp > 0) {
+                        // Attimo di respiro: invulnerabilità, nemici respinti e spawn in pausa
+                        this.hurtGrace = HURT_GRACE_TIME;
+                        this.enemies.forEach(e => { e.x += (e.side === 'left' ? -1 : 1) * HURT_KNOCKBACK; });
+                        this.spawnTimer = Math.max(this.spawnTimer, HURT_SPAWN_DELAY);
+                        this.pendingTapSide = null;
+                        clearTimeout(this.pendingTapTimeout);
+                    }
                     this.updateHUD();
 
                     if (this.hp <= 0) this.endRun();
-                    else this.spawnFloatingText(this.centerX, this.groundY - 90, '-1 CUORE!', '#ff2a85');
+                    else {
+                        this.spawnFloatingText(this.centerX, this.groundY - 90, '-1 CUORE!', '#ff2a85');
+                        this.spawnFloatingText(this.centerX, this.groundY - 112, 'RESPIRA...', '#00f5d4');
+                    }
                 },
 
                 endRun() {
@@ -5078,9 +5138,13 @@
 
                     const heartsEl = document.getElementById('hud-hearts');
                     let html = '';
-                    for (let i = 0; i < this.maxHp; i++) {
+                    const heartSlots = Math.max(this.maxHp, this.hp);
+                    for (let i = 0; i < heartSlots; i++) {
                         const active = i < this.hp;
-                        html += heartSvg(active);
+                        html += heartSvg(active, i >= this.maxHp);
+                    }
+                    if (this.hurtGrace > 0) {
+                        html += `<span class="ml-1 px-1.5 py-0.5 rounded bg-[#00f5d4] text-black font-bold text-[8px] blink-arcade">RESPIRO</span>`;
                     }
                     if (this.hasShieldDrone) {
                         html += `<span class="ml-1 px-1.5 py-0.5 rounded bg-[#00f5d4] text-black font-bold text-[8px]">SCUDO</span>`;
@@ -5240,6 +5304,12 @@
                         document.getElementById('hud-combo-bar').style.width = '0%';
                     }
 
+                    if (this.hurtGrace > 0) this.hurtGrace = Math.max(0, this.hurtGrace - dt);
+                    while (this.score >= this.nextHeartScore) {
+                        this.nextHeartScore += HEART_SCORE_STEP;
+                        this.heartPending = true;
+                    }
+
                     this.spawnTimer -= dt;
                     if (this.spawnTimer <= 0) {
                         this.spawnEnemy();
@@ -5321,7 +5391,10 @@
                         ctx.restore();
                     });
 
+                    const blinkOff = this.state === 'PLAYING' && this.hurtGrace > 0 && Math.floor(this.globalTime * 16) % 2 === 0;
+                    if (blinkOff) ctx.globalAlpha = 0.4;
                     this.drawPlayer();
+                    ctx.globalAlpha = 1;
                     this.enemies.forEach(e => this.drawEnemy(e));
 
                     this.ragdolls.forEach(r => {
@@ -5541,6 +5614,28 @@
                         PixelRenderer.drawMatrix(ctx, matrix, ex, ey + hoverY, eScale, e.palette, flipX, e.flashTimer > 0);
                     }
                     ctx.restore();
+
+                    if (e.heart) {
+                        // alone rosa a terra + cuore pixel che fluttua sopra la testa
+                        const pulse = Math.floor(Math.sin(this.globalTime * 10) * 3);
+                        ctx.fillStyle = 'rgba(255,42,133,0.35)';
+                        ctx.fillRect(ex - 22 - pulse, ey - 2, 44 + pulse * 2, 6);
+                        const hy = ey - 98 + Math.floor(Math.sin(this.globalTime * 8) * 4);
+                        HEART_ROWS.forEach((row, ry) => {
+                            for (let rx = 0; rx < row.length; rx++) {
+                                if (row[rx] !== 'X') continue;
+                                ctx.fillStyle = '#000000';
+                                ctx.fillRect(ex - 14 + rx * 4 - 1, hy + ry * 4 - 1, 6, 6);
+                            }
+                        });
+                        HEART_ROWS.forEach((row, ry) => {
+                            for (let rx = 0; rx < row.length; rx++) {
+                                if (row[rx] !== 'X') continue;
+                                ctx.fillStyle = (rx === 1 && ry === 1) ? '#ffffff' : '#ff2a85';
+                                ctx.fillRect(ex - 14 + rx * 4, hy + ry * 4, 4, 4);
+                            }
+                        });
+                    }
 
                     if (e.type === 'charger') {
                         ctx.font = '700 10px "Press Start 2P", monospace';
