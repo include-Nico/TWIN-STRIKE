@@ -402,6 +402,18 @@
                     <span id="hud-fury-pct" class="font-pixel-num text-base leading-none text-[#ffd000] w-10 text-right">0%</span>
                 </div>
 
+                <div id="hud-fury2-box" class="hidden mt-1.5 items-center gap-2.5">
+                    <span class="text-[8px] font-bold tracking-wider" style="color:#7dd3fc">ULTRA</span>
+                    <div class="seg h-2.5 flex-1">
+                        <div id="hud-fury2-bar" class="h-full w-0 transition-all duration-150" style="background:linear-gradient(90deg,#7c3aed,#38bdf8,#e0f2fe)"></div>
+                    </div>
+                    <span id="hud-fury2-pct" class="font-pixel-num text-base leading-none w-10 text-right" style="color:#7dd3fc">0%</span>
+                </div>
+
+                <div id="hud-sc-ready" class="hidden mt-3 text-center">
+                    <span class="inline-block px-glass font-pixel-title text-[9px] px-3 py-1.5 blink-arcade" style="--k:#38bdf8;color:#7dd3fc">&#9889; SUPERCHARGED PRONTA &#9889;</span>
+                </div>
+
                 <div id="hud-super-ready" class="hidden mt-3 text-center">
                     <span class="inline-block px-glass text-[#ffd000] font-pixel-title text-[9px] px-3 py-1.5 blink-arcade" style="--k:#ffd000">&#9733; SUPER PRONTA &#9733;</span>
                 </div>
@@ -572,17 +584,12 @@
                     <span id="preview-brawler-title" class="text-[#ffd000] font-bold">SPRITE: RYUJI</span>
                     <span id="preview-anim-state" class="text-[#00f5d4]">STATO: IDLE</span>
                 </div>
-                <canvas id="previewCanvas" width="280" height="112" class="bg-[#120e24] rounded-xl border-2 border-[#2e294e] w-full max-w-[290px] h-[96px] block"></canvas>
+                <canvas id="previewCanvas" width="280" height="112" onclick="window.UI.randomPreviewMove()" class="bg-[#120e24] rounded-xl border-2 border-[#2e294e] w-full max-w-[290px] h-[96px] block cursor-pointer"></canvas>
                 <!-- Selettore Stile Colore (3 Skin per Brawler) -->
                 <div id="preview-skins-bar" class="flex items-center justify-center gap-1.5 mt-1.5 w-full flex-wrap"></div>
-                <div class="flex flex-wrap justify-center gap-1.5 mt-2 w-full">
-                    <button type="button" onclick="window.UI.triggerPreviewAnim('IDLE')" class="px-panel rounded-lg px-2.5 py-1.5 text-[9px] text-white hover:border-[#00f5d4] cursor-pointer">IDLE</button>
-                    <button type="button" onclick="window.UI.triggerPreviewAnim('ATTACK_LEFT')" class="px-panel rounded-lg px-2.5 py-1.5 text-[9px] text-[#00f5d4] hover:border-[#00f5d4] cursor-pointer">◀ PUGNO SX</button>
-                    <button type="button" onclick="window.UI.triggerPreviewAnim('ATTACK_RIGHT')" class="px-panel rounded-lg px-2.5 py-1.5 text-[9px] text-[#ff2a85] hover:border-[#ff2a85] cursor-pointer">CALCIO DX ▶</button>
-                    <button type="button" onclick="window.UI.triggerPreviewAnim('PARRY')" class="px-panel rounded-lg px-2.5 py-1.5 text-[9px] text-[#ffd000] hover:border-[#ffd000] cursor-pointer">⚡ PARRY</button>
-                    <button type="button" onclick="window.UI.triggerPreviewAnim('SUPER')" class="px-panel rounded-lg px-2.5 py-1.5 text-[9px] text-fuchsia-300 border-fuchsia-500/60 hover:border-fuchsia-300 cursor-pointer">★ SUPER UNICA</button>
-                    <button type="button" onclick="window.UI.triggerPreviewAnim('KO')" class="px-panel rounded-lg px-2.5 py-1.5 text-[9px] text-rose-300 border-rose-500/60 hover:border-rose-300 cursor-pointer">💀 K.O.</button>
-                </div>
+                <button type="button" onclick="window.UI.randomPreviewMove()" class="mt-2 w-full px-panel rounded-lg py-2 text-[10px] text-white font-bold hover:border-[#00f5d4] cursor-pointer active:translate-y-px">
+                    &#127922; MOSSA CASUALE <span class="text-zinc-400 font-normal">(o tocca il guerriero)</span>
+                </button>
             </div>
 
             <div id="brawlers-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
@@ -1890,6 +1897,173 @@
                     }
                 },
 
+                // ===== SUPERCHARGED: aura pixel azzurro/viola stile "ultra istinto" =====
+                // intensity 0..1; strong = barra ULTRA piena o super attiva; badge = mostra scritta sopra la testa
+                drawSCAura(ctx, x, y, t, intensity = 0.4, strong = false, badge = false) {
+                    const cx = Math.floor(x), gy = Math.floor(y);
+                    const cols = ['#38bdf8', '#8b5cf6', '#c4b5fd', '#e0f2fe'];
+                    const pulse = Math.floor(Math.sin(t * 12) * 4);
+
+                    // anello sul tatami
+                    ctx.fillStyle = `rgba(139,92,246,${0.12 + 0.28 * intensity})`;
+                    ctx.fillRect(cx - 44 - pulse, gy - 3, 88 + pulse * 2, 9);
+                    ctx.fillStyle = `rgba(56,189,248,${0.25 + 0.55 * intensity})`;
+                    ctx.fillRect(cx - 30 - pulse, gy - 1, 60 + pulse * 2, 3);
+                    ctx.fillStyle = `rgba(224,242,254,${0.3 + 0.6 * intensity})`;
+                    ctx.fillRect(cx - 12, gy, 24, 2);
+
+                    // scintille / fiamme che salgono lungo il corpo
+                    const n = strong ? 16 : 7;
+                    for (let i = 0; i < n; i++) {
+                        const side = i % 2 === 0 ? -1 : 1;
+                        const spd = strong ? 150 : 62;
+                        const fy = gy - 6 - Math.floor((t * spd + i * 17) % 96);
+                        const fx = Math.floor(cx + side * (14 + (i % 4) * 7 + Math.sin(t * 9 + i) * 4));
+                        const sz = strong ? (i % 3 === 0 ? 6 : 4) : 3;
+                        ctx.globalAlpha = Math.min(1, 0.45 + intensity * 0.55);
+                        ctx.fillStyle = cols[i % 4];
+                        ctx.fillRect(fx, fy, sz, sz * (strong ? 2 : 1));
+                    }
+                    ctx.globalAlpha = 1;
+
+                    if (strong) {
+                        // colonne di energia sui fianchi
+                        for (let k = -1; k <= 1; k += 2) {
+                            for (let j = 0; j < 5; j++) {
+                                const h = 22 + Math.floor(Math.abs(Math.sin(t * 11 + j * 1.7 + k)) * 40);
+                                const bx = cx + k * (26 + j * 5);
+                                ctx.fillStyle = j % 2 === 0 ? '#8b5cf6' : '#38bdf8';
+                                ctx.fillRect(bx - 2, gy - h, 4, h);
+                                ctx.fillStyle = '#e0f2fe';
+                                ctx.fillRect(bx - 1, gy - h, 2, 4);
+                            }
+                        }
+                        // ciuffo a punta sopra la testa
+                        for (let j = -3; j <= 3; j++) {
+                            const h = 8 + Math.floor(Math.abs(Math.sin(t * 14 + j)) * 10) + (3 - Math.abs(j)) * 3;
+                            ctx.fillStyle = j % 2 === 0 ? '#38bdf8' : '#c4b5fd';
+                            ctx.fillRect(cx + j * 5 - 2, gy - 92 - h, 4, h);
+                        }
+                    }
+
+                    if (badge) {
+                        const bob = Math.floor(Math.sin(t * 10) * 3);
+                        ctx.font = '700 9px "Press Start 2P", monospace';
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = '#000000';
+                        ctx.fillText('⚡ ULTRA [L+R] ⚡', cx + 2, gy - 116 + bob);
+                        ctx.fillStyle = Math.floor(t * 8) % 2 === 0 ? '#7dd3fc' : '#c4b5fd';
+                        ctx.fillText('⚡ ULTRA [L+R] ⚡', cx, gy - 118 + bob);
+                    }
+                },
+
+                // Strato dietro la scena super: velo viola + raggi azzurri
+                drawSCBack(ctx, brawlerId, cx, gy, canvasW, t) {
+                    ctx.fillStyle = 'rgba(76,29,149,0.30)';
+                    ctx.fillRect(0, 0, canvasW, gy);
+                    for (let i = -3; i <= 3; i++) {
+                        const bx = cx + i * 38;
+                        const h = gy * (0.55 + 0.45 * Math.abs(Math.sin(t * 6 + i)));
+                        ctx.fillStyle = i % 2 === 0 ? 'rgba(56,189,248,0.22)' : 'rgba(139,92,246,0.26)';
+                        ctx.fillRect(bx - 5, gy - h, 10, h);
+                        ctx.fillStyle = 'rgba(224,242,254,0.35)';
+                        ctx.fillRect(bx - 1, gy - h, 2, h);
+                    }
+                },
+
+                // Dettagli azzurri/viola SOPRA l'animazione base di ogni super
+                drawSCFront(ctx, brawlerId, cx, gy, canvasW, t, scale) {
+                    const A = '#38bdf8', V = '#8b5cf6', L = '#c4b5fd', W = '#e0f2fe';
+
+                    // anello di rombi che ruota attorno al personaggio
+                    for (let i = 0; i < 10; i++) {
+                        const ang = t * 5 + i * (Math.PI * 2 / 10);
+                        const rx = Math.floor(cx + Math.cos(ang) * 58);
+                        const ry = Math.floor(gy - 46 + Math.sin(ang) * 20);
+                        ctx.fillStyle = i % 2 === 0 ? A : V;
+                        ctx.fillRect(rx - 3, ry - 3, 6, 6);
+                        ctx.fillStyle = W;
+                        ctx.fillRect(rx - 1, ry - 1, 2, 2);
+                    }
+                    // scintille ascendenti
+                    for (let i = 0; i < 18; i++) {
+                        const sx = Math.floor(cx - 90 + ((i * 53) % 180));
+                        const sy = gy - Math.floor((t * 170 + i * 29) % gy);
+                        ctx.fillStyle = [A, V, L, W][i % 4];
+                        ctx.fillRect(sx, sy, 3, 6);
+                    }
+
+                    if (brawlerId === 'ryuji') {
+                        // seconda spirale di drago viola/azzurra
+                        for (let y = 14; y < gy; y += 12) {
+                            const wave = Math.sin(y * 0.08 - t * 18 + 1.6) * 34;
+                            ctx.fillStyle = V;
+                            ctx.fillRect(Math.floor(cx + wave - 5), y, 10, 9);
+                            ctx.fillStyle = A;
+                            ctx.fillRect(Math.floor(cx - wave - 4), y + 2, 8, 6);
+                        }
+                    } else if (brawlerId === 'vex') {
+                        // secondo quadrante antiorario, lancette viola
+                        const clockY = gy - 36;
+                        for (let a = 0; a < 16; a++) {
+                            const ang = (a / 16) * Math.PI * 2;
+                            ctx.fillStyle = a % 4 === 0 ? W : V;
+                            ctx.fillRect(Math.floor(cx + Math.cos(ang) * 56) - 2, Math.floor(clockY + Math.sin(ang) * 56) - 2, 4, 4);
+                        }
+                        const hand = t * 9;
+                        for (let st = 0; st < 46; st += 4) {
+                            ctx.fillStyle = A;
+                            ctx.fillRect(Math.floor(cx + Math.cos(hand) * st), Math.floor(clockY + Math.sin(hand) * st), 4, 4);
+                        }
+                    } else if (brawlerId === 'titan') {
+                        // fratture di energia sulle colonne di magma + schegge orbitanti
+                        for (let i = -2; i <= 2; i++) {
+                            if (i === 0) continue;
+                            const h = 28 + Math.floor(Math.abs(Math.sin(t * 12 + i * 2)) * 45);
+                            const gx = cx + i * 34;
+                            ctx.fillStyle = V;
+                            ctx.fillRect(gx - 9, gy - h, 3, h);
+                            ctx.fillRect(gx + 6, gy - h, 3, h);
+                            ctx.fillStyle = A;
+                            ctx.fillRect(gx - 2, gy - h - 6, 4, 8);
+                        }
+                        for (let m = 0; m < 4; m++) {
+                            const ang = -t * 7 + m * (Math.PI / 2) + 0.8;
+                            ctx.fillStyle = L;
+                            ctx.fillRect(Math.floor(cx + Math.cos(ang) * 62) - 3, Math.floor(gy - 32 + Math.sin(ang) * 24) - 3, 6, 6);
+                        }
+                    } else if (brawlerId === 'kitsune') {
+                        // code di fuoco spirituale viola/azzurro + monete scintillanti
+                        for (let tail = -3; tail <= 3; tail++) {
+                            const angle = tail * 0.34 + Math.sin(t * 9 + tail) * 0.07;
+                            for (let d = 14; d <= 56; d += 6) {
+                                const tx = Math.floor(cx + Math.sin(angle) * d);
+                                const ty = Math.floor(gy - 24 - Math.cos(angle) * d);
+                                ctx.fillStyle = d > 44 ? W : (tail % 2 === 0 ? V : A);
+                                ctx.fillRect(tx - 3, ty - 3, 6, 6);
+                            }
+                        }
+                        for (let c = 0; c < 6; c++) {
+                            ctx.fillStyle = L;
+                            ctx.fillRect(cx - 70 + c * 28, Math.floor((t * 150 + c * 41) % gy), 5, 8);
+                        }
+                    } else if (brawlerId === 'cypher') {
+                        // glitch orizzontali + due cloni olografici extra
+                        for (let g = 0; g < 6; g++) {
+                            const gyy = Math.floor((t * 90 + g * 23) % gy);
+                            ctx.fillStyle = g % 2 === 0 ? 'rgba(56,189,248,0.7)' : 'rgba(139,92,246,0.7)';
+                            ctx.fillRect(cx - 100 + ((g * 31 + Math.floor(t * 40)) % 40), gyy, 60 + g * 8, 3);
+                        }
+                        const frames = this.getBrawlerFrames(brawlerId);
+                        const holo = { suit: V, shade: '#4c1d95', skin: W, band: A, belt: W };
+                        ctx.save();
+                        ctx.globalAlpha = 0.55;
+                        this.drawMatrix(ctx, frames.PUNCH_EXTEND, cx - 92, gy - 4, scale, holo, true, false);
+                        this.drawMatrix(ctx, frames.KICK_EXTEND, cx + 92, gy - 4, scale, holo, false, false);
+                        ctx.restore();
+                    }
+                },
+
                 // Aura Fiammeggiante Super Pronta (100% Furia) attorno al Brawler
                 drawReadyAura(ctx, x, y, color, globalTime) {
                     const cx = Math.floor(x);
@@ -2714,7 +2888,16 @@
                 },
 
                 // 5 ANIMAZIONI SUPER / OVERDRIVE PERSONALIZZATE E RICOLORATE IN BASE ALLA SKIN
-                drawCustomSuperFX(ctx, brawlerId, cx, gy, canvasW, globalTime, scale = 4, customPal = null) {
+                drawCustomSuperFX(ctx, brawlerId, cx, gy, canvasW, globalTime, scale = 4, customPal = null, sc = false) {
+                    if (sc) this.drawSCBack(ctx, brawlerId, cx, gy, canvasW, globalTime);
+                    this.drawCustomSuperFXBase(ctx, brawlerId, cx, gy, canvasW, globalTime, scale, customPal);
+                    if (sc) {
+                        this.drawSCAura(ctx, cx, gy, globalTime, 1, true, false);
+                        this.drawSCFront(ctx, brawlerId, cx, gy, canvasW, globalTime, scale);
+                    }
+                },
+
+                drawCustomSuperFXBase(ctx, brawlerId, cx, gy, canvasW, globalTime, scale = 4, customPal = null) {
                     const pal = customPal || getActivePalette(brawlerId);
                     const frames = this.getBrawlerFrames(brawlerId);
 
@@ -2848,6 +3031,17 @@
             const STORAGE_KEY = 'twinstrike_pixel_edition_v4';
             const LEGACY_KEYS = ['twinstrike_pixel_edition_v3', 'twinstrike_pixel_edition_v2', 'twinstrike_save_v1'];
             const CRATE_SCORE_STEP = 20000;
+            const SUPERCHARGED_COST = 5000;
+            const SUPERCHARGED_CRATE_CHANCE = 0.20;
+            const SC_EXTRA_BAR = 30; // colpi extra rispetto alla barra Super normale
+
+            const SC_INFO = {
+                ryuji:   { name: 'DOPPIO DRAGO',      desc: 'Seconda onda dopo 1,2s: spazza via anche i nemici appena arrivati.' },
+                vex:     { name: 'CHRONO ULTRA',      desc: 'Nemici rallentati del 65% per 5,5s e timer combo congelato.' },
+                titan:   { name: 'MAGMA A CATENA',    desc: 'Chi ti tocca esplode e travolge i nemici vicini sullo stesso lato.' },
+                kitsune: { name: 'ORO ULTRA',         desc: 'Monete x5 per 7,5s (invece di x3 per 6s).' },
+                cypher:  { name: 'LEGIONE OLOGRAMMA', desc: 'I cloni colpiscono 2 nemici per lato per 7,5s.' }
+            };
 
             const defaultState = {
                 currency: 350,
@@ -2875,7 +3069,9 @@
                     cypher: 0
                 },
                 upgrades: { maxHp: 0, hitRange: 0, comboCap: 0, furyCharge: 0, coinMultiplier: 0 },
-                gadgets: { shieldDrone: false, fastStart: false }
+                gadgets: { shieldDrone: false, fastStart: false },
+                supercharged: { ryuji: false, vex: false, titan: false, kitsune: false, cypher: false },
+                crateScFlags: []
             };
 
             const SaveSystem = {
@@ -2889,6 +3085,8 @@
                     this.data.gadgets = Object.assign({}, defaultState.gadgets, parsed.gadgets || {});
                     this.data.unlockedSkins = Object.assign({}, JSON.parse(JSON.stringify(defaultState.unlockedSkins)), parsed.unlockedSkins || {});
                     this.data.selectedSkins = Object.assign({}, defaultState.selectedSkins, parsed.selectedSkins || {});
+                    this.data.supercharged = Object.assign({}, defaultState.supercharged, parsed.supercharged || {});
+                    if (!Array.isArray(this.data.crateScFlags)) this.data.crateScFlags = [];
                     if (parsed.crateModel !== 2) {
                         this.data.crateProgress = 0;
                         this.data.crateModel = 2;
@@ -3031,6 +3229,8 @@
                     if (newlyEarned > 0) {
                         this.data.cratesClaimedTotal = (this.data.cratesClaimedTotal || 0) + newlyEarned;
                         this.data.pendingCrates = (this.data.pendingCrates || 0) + newlyEarned;
+                        if (!Array.isArray(this.data.crateScFlags)) this.data.crateScFlags = [];
+                        for (let k = 0; k < newlyEarned; k++) this.data.crateScFlags.push(Math.random() < SUPERCHARGED_CRATE_CHANCE);
                     }
                     this.save();
                     return newlyEarned;
@@ -3076,6 +3276,36 @@
                 shakeTimer: 0,
                 particles: [],
                 offeredSkinReward: null,
+                offeredSC: null,
+
+                // 20% (deciso quando la cassa viene guadagnata): premio Supercharged per un fighter posseduto non ancora potenziato
+                rollSupercharged() {
+                    const s = SaveSystem.data;
+                    const flag = Array.isArray(s.crateScFlags) && s.crateScFlags[0] === true;
+                    if (!flag) return null;
+                    const pool = s.unlockedBrawlers.filter(id => BRAWLERS[id] && !(s.supercharged || {})[id]);
+                    if (pool.length === 0) return null;
+                    const id = pool[Math.floor(Math.random() * pool.length)];
+                    return { brawlerId: id, brawlerName: BRAWLERS[id].name, info: SC_INFO[id] };
+                },
+
+                consumeCrateFlag() {
+                    if (Array.isArray(SaveSystem.data.crateScFlags)) SaveSystem.data.crateScFlags.shift();
+                },
+
+                claimSupercharged() {
+                    const s = SaveSystem.data;
+                    if ((s.pendingCrates || 0) <= 0 || !this.offeredSC) return;
+                    const rw = this.offeredSC;
+                    if (s.supercharged[rw.brawlerId]) return;
+                    s.pendingCrates--;
+                    this.consumeCrateFlag();
+                    s.supercharged[rw.brawlerId] = true;
+                    SaveSystem.save();
+                    Sound.play('superReady');
+                    UI.showToast(`⚡ SUPERCHARGED ${rw.brawlerName} SBLOCCATA!`);
+                    this.afterClaimTransition();
+                },
 
                 // Trova una skin sbloccabile seguendo esattamente la regola richiesta:
                 // 1. Prima cerca tra i Brawler POSSEDUTI
@@ -3123,6 +3353,7 @@
                     this.shakeTimer = 0;
                     this.particles = [];
                     this.offeredSkinReward = this.rollAvailableSkin();
+                    this.offeredSC = this.rollSupercharged();
 
                     document.getElementById('crate-modal-counter').textContent = `x${SaveSystem.data.pendingCrates}`;
                     document.getElementById('crate-choices-container').classList.add('hidden');
@@ -3180,6 +3411,26 @@
                     container.classList.remove('hidden');
                     grid.innerHTML = '';
 
+                    // Premio raro: SUPERCHARGED (20%)
+                    if (this.offeredSC) {
+                        const sc = this.offeredSC;
+                        const scCard = document.createElement('div');
+                        scCard.className = 'px-panel rounded-xl p-3 flex items-center justify-between gap-3';
+                        scCard.style.borderColor = '#38bdf8';
+                        scCard.innerHTML = `
+                            <div class="text-left min-w-0">
+                                <div class="font-pixel-title text-[10px]" style="color:#7dd3fc">&#9889; SUPERCHARGED: ${sc.brawlerName}</div>
+                                <div class="text-[10px] text-white font-bold mt-1">${sc.info.name}</div>
+                                <div class="text-[9px] text-zinc-300 mt-0.5 leading-snug">${sc.info.desc}</div>
+                                <div class="text-[8px] mt-1" style="color:#c4b5fd">PREMIO RARO &middot; non si potrà riottenere né riacquistare</div>
+                            </div>
+                            <button type="button" onclick="window.CrateSystem.claimSupercharged()" class="rounded-xl px-btn text-black font-pixel-title text-[9px] px-3 py-2.5 shrink-0 cursor-pointer" style="background:linear-gradient(90deg,#8b5cf6,#38bdf8)">
+                                SCEGLI
+                            </button>
+                        `;
+                        grid.appendChild(scCard);
+                    }
+
                     // Opzione 1: +1.250 Crediti (Sempre disponibile)
                     const creditsCard = document.createElement('div');
                     creditsCard.className = 'px-panel rounded-xl p-3 border-[#ffd000] flex items-center justify-between gap-3';
@@ -3234,6 +3485,7 @@
                 claimCredits() {
                     if ((SaveSystem.data.pendingCrates || 0) <= 0) return;
                     SaveSystem.data.pendingCrates--;
+                    this.consumeCrateFlag();
                     SaveSystem.data.currency += 1250;
                     SaveSystem.save();
                     Sound.play('coin');
@@ -3245,6 +3497,7 @@
                     if ((SaveSystem.data.pendingCrates || 0) <= 0 || !this.offeredSkinReward) return;
                     const rw = this.offeredSkinReward;
                     SaveSystem.data.pendingCrates--;
+                    this.consumeCrateFlag();
 
                     if (!SaveSystem.data.unlockedSkins[rw.brawlerId]) {
                         SaveSystem.data.unlockedSkins[rw.brawlerId] = [0];
@@ -3577,9 +3830,22 @@
                     }, 1700);
                 },
 
+                isPreviewSC() {
+                    return !!(SaveSystem.data.supercharged || {})[this.previewBrawlerId] || !!this.previewForceSC;
+                },
+
+                // Un solo pulsante: mossa casuale diversa dall'ultima (anche toccando il guerriero)
+                randomPreviewMove() {
+                    const pool = ['ATTACK_LEFT', 'ATTACK_RIGHT', 'PARRY', 'SUPER', 'ATTACK_LEFT', 'ATTACK_RIGHT', 'SUPER', 'KO'];
+                    let m;
+                    do { m = pool[Math.floor(Math.random() * pool.length)]; } while (m === this._lastRandMove);
+                    this._lastRandMove = m;
+                    this.triggerPreviewAnim(m);
+                },
+
                 triggerPreviewAnim(state) {
                     this.previewState = state;
-                    this.previewDur = state === 'SUPER' ? 1.15 : (state === 'KO' ? 1.6 : (state === 'PARRY' ? 0.7 : (state === 'IDLE' ? 0.1 : 0.6)));
+                    this.previewDur = state === 'SUPER' ? (this.isPreviewSC() ? 1.5 : 1.15) : (state === 'KO' ? 1.6 : (state === 'PARRY' ? 0.7 : (state === 'IDLE' ? 0.1 : 0.6)));
                     this.previewTimer = this.previewDur;
                     document.getElementById('preview-anim-state').textContent = 'STATO: ' + state;
                     if (state === 'ATTACK_LEFT' || state === 'ATTACK_RIGHT') Sound.play('hit');
@@ -3620,8 +3886,13 @@
                     const gy = 94;
                     const pScale = 3.2;
 
+                    const pvSC = this.isPreviewSC();
+                    if (pvSC && this.previewState !== 'SUPER' && this.previewState !== 'KO') {
+                        PixelRenderer.drawSCAura(pCtx, cx, gy, globalTime, 0.7, false, false);
+                    }
+
                     if (this.previewState === 'SUPER') {
-                        PixelRenderer.drawCustomSuperFX(pCtx, b.id, cx, gy, pCanvas.width, globalTime, pScale, pal);
+                        PixelRenderer.drawCustomSuperFX(pCtx, b.id, cx, gy, pCanvas.width, globalTime, pScale, pal, pvSC);
                     } else if (this.previewState === 'KO') {
                         PixelRenderer.drawKO(pCtx, b.id, cx, gy, pScale, pal, 1.6 - this.previewTimer, globalTime);
                     } else if (this.previewState === 'ATTACK_LEFT') {
@@ -3697,11 +3968,13 @@
                         const unlocked = s.unlockedBrawlers.includes(b.id);
                         const selected = s.selectedBrawler === b.id;
                         const unlockedSkinsCount = (s.unlockedSkins[b.id] || [0]).length;
+                        const hasSC = !!(s.supercharged || {})[b.id];
 
                         const card = document.createElement('div');
                         card.className = `px-panel rounded-xl p-2.5 cursor-pointer ${selected ? 'border-[#00f5d4]' : 'border-[#2e294e]'}`;
                         card.onclick = () => {
                             this.previewBrawlerId = b.id;
+                            this.previewForceSC = false;
                             const sk = getActiveSkinInfo(b.id);
                             document.getElementById('preview-brawler-title').textContent = `SPRITE: ${b.name} (${sk.name})`;
                             this.renderPreviewSkinSelector();
@@ -3729,6 +4002,23 @@
                                     `}
                                 </div>
                             </div>
+                        
+                        <div class="mt-2 pt-2 border-t border-[#2e294e] flex items-center justify-between gap-2" onclick="event.stopPropagation()">
+                            <div class="min-w-0">
+                                <div class="text-[10px] font-bold" style="color:#7dd3fc">&#9889; SUPERCHARGED: ${SC_INFO[b.id].name}</div>
+                                <div class="text-[9px] text-zinc-400 leading-snug">${SC_INFO[b.id].desc}</div>
+                            </div>
+                            <div class="shrink-0 flex flex-col items-end gap-1">
+                                ${hasSC ? `
+                                    <span class="px-2 py-1 rounded text-black font-pixel-title text-[8px]" style="background:linear-gradient(90deg,#8b5cf6,#38bdf8)">&#9733; POSSEDUTA</span>
+                                ` : unlocked ? `
+                                    <button type="button" onclick="window.UI.buySupercharged('${b.id}')" class="rounded-lg px-btn text-black px-2.5 py-1.5 font-pixel-title text-[9px] cursor-pointer" style="background:linear-gradient(90deg,#8b5cf6,#38bdf8)">${SUPERCHARGED_COST.toLocaleString('it-IT')} CR</button>
+                                ` : `
+                                    <span class="text-[8px] text-zinc-500">&#128274; SBLOCCA IL FIGHTER</span>
+                                `}
+                                ${hasSC ? '' : `<button type="button" onclick="window.UI.previewSupercharged('${b.id}')" class="text-[8px] text-[#7dd3fc] underline cursor-pointer">&#128065; ANTEPRIMA</button>`}
+                            </div>
+                        </div>
                         `;
                         container.appendChild(card);
                     });
@@ -3742,6 +4032,33 @@
                     this.renderBrawlersModal();
                     this.triggerPreviewAnim('SUPER');
                     this.showToast(BRAWLERS[id].name + ' SELEZIONATO!');
+                },
+
+                previewSupercharged(id) {
+                    this.previewBrawlerId = id;
+                    this.previewForceSC = true;
+                    this.renderPreviewSkinSelector();
+                    this.triggerPreviewAnim('SUPER');
+                },
+
+                buySupercharged(id) {
+                    const s = SaveSystem.data;
+                    if (!s.unlockedBrawlers.includes(id)) { this.showToast('SBLOCCA PRIMA IL FIGHTER!'); return; }
+                    if (s.supercharged[id]) return;
+                    if (s.currency < SUPERCHARGED_COST) {
+                        Sound.play('whiff');
+                        this.showToast('CREDITI INSUFFICIENTI!');
+                        return;
+                    }
+                    s.currency -= SUPERCHARGED_COST;
+                    s.supercharged[id] = true;
+                    this.previewBrawlerId = id;
+                    this.previewForceSC = false;
+                    SaveSystem.save();
+                    Sound.play('superReady');
+                    this.renderBrawlersModal();
+                    this.triggerPreviewAnim('SUPER');
+                    this.showToast(`⚡ SUPERCHARGED ${BRAWLERS[id].name} ATTIVA!`);
                 },
 
                 buyBrawler(id) {
@@ -3897,6 +4214,12 @@
                 superReadyNotified: false,
                 superFlashTimer: 0,
                 overdriveTimer: 0,
+                furyS: 0,
+                furySMax: 66,
+                isSC: false,
+                scFx: false,
+                scReadyNotified: false,
+                superFlashSC: false,
                 overdriveType: null,
 
                 animState: 'IDLE',
@@ -3985,9 +4308,11 @@
                     const pal = getActivePalette(brawler.id);
                     this.setPlayerAnim(move, move === 'SUPER' ? 0.95 : (move === 'PARRY' ? 0.6 : 0.5));
                     if (move === 'SUPER') {
-                        this.superBeamTimer = 0.85;
+                        const owned = !!(SaveSystem.data.supercharged || {})[brawler.id];
+                        this.scFx = owned;
+                        this.superBeamTimer = owned ? 1.1 : 0.85;
                         Sound.play('super');
-                        this.spawnFloatingText(this.centerX, this.groundY - 108, `★ ${brawler.overdriveName}! ★`, pal.aura);
+                        this.spawnFloatingText(this.centerX, this.groundY - 108, owned ? `⚡ ${SC_INFO[brawler.id].name}! ⚡` : `★ ${brawler.overdriveName}! ★`, owned ? '#7dd3fc' : pal.aura);
                     } else if (move === 'PARRY') {
                         Sound.play('parry');
                         this.spawnFloatingText(this.centerX, this.groundY - 95, 'PARRY L+R!', '#ffd000');
@@ -4099,6 +4424,8 @@
                     this.comboMaxTime = 3.0 + (s.upgrades.comboCap || 0) * 0.4;
                     this.maxMultiplier = 8 + (s.upgrades.comboCap || 0) * 1;
                     this.furyMax = Math.max(18, 36 - (s.upgrades.furyCharge || 0) * 3);
+                    this.isSC = !!(s.supercharged && s.supercharged[brawler.id]);
+                    this.furySMax = this.furyMax + SC_EXTRA_BAR;
 
                     this.secondWindAvailable = (brawler.id === 'ryuji');
                     this.hasShieldDrone = !!s.gadgets.shieldDrone;
@@ -4120,6 +4447,9 @@
                     this.superFlashTimer = 0;
                     this.overdriveTimer = 0;
                     this.overdriveType = null;
+                    this.furyS = 0;
+                    this.scFx = false;
+                    this.scReadyNotified = false;
 
                     this.animState = 'IDLE';
                     this.animTimer = 0;
@@ -4295,14 +4625,25 @@
                             .filter(e => e.side === oppSide && Math.abs(e.x) <= this.hitRange * 1.2)
                             .sort((a, b) => Math.abs(a.x) - Math.abs(b.x));
                         if (oppCandidates.length > 0) this.hitEnemy(oppCandidates[0], true);
+                        if (this.scFx) {
+                            if (oppCandidates.length > 1) this.hitEnemy(oppCandidates[1], true);
+                            const sameExtra = this.enemies
+                                .filter(e => e.side === side && Math.abs(e.x) <= this.hitRange * 1.2)
+                                .sort((a, b) => Math.abs(a.x) - Math.abs(b.x))[0];
+                            if (sameExtra) this.hitEnemy(sameExtra, true);
+                        }
                     }
                 },
 
                 executeSimultaneousAction() {
                     if (this.state !== 'PLAYING' || this.paused || this.whiffTimer > 0) return;
 
+                    if (this.isSC && this.furyS >= this.furySMax && this.overdriveTimer <= 0) {
+                        this.activateOverdrive(true);
+                        return;
+                    }
                     if (this.fury >= this.furyMax) {
-                        this.activateOverdrive();
+                        this.activateOverdrive(false);
                         return;
                     }
 
@@ -4385,7 +4726,7 @@
                         else if (Math.random() < (isPerfect ? 0.3 : 0.12)) coins = 1;
 
                         if (brawlerId === 'kitsune' && isPerfect) coins += 1;
-                        if (this.overdriveType === 'kitsune') coins *= 3;
+                        if (this.overdriveType === 'kitsune') coins *= (this.scFx ? 5 : 3);
 
                         if (coins > 0) {
                             this.coinsRun += coins;
@@ -4403,8 +4744,29 @@
                                 this.triggerSuperReadyAlert();
                             }
                         }
+                        // Barra ULTRA: si carica in parallelo, non scende mai (neanche se sbagli o vieni colpito)
+                        if (this.isSC && !this.scFx && this.furyS < this.furySMax) {
+                            this.furyS = Math.min(this.furySMax, this.furyS + (isPerfect ? 1.7 : 1));
+                            if (this.furyS >= this.furySMax) this.triggerSCReadyAlert();
+                        }
                     }
 
+                    this.updateHUD();
+                },
+
+                triggerSCReadyAlert() {
+                    if (this.scReadyNotified) return;
+                    this.scReadyNotified = true;
+                    this.superFlashTimer = 0.45;
+                    this.superFlashSC = true;
+                    this.shakeX = 10;
+                    this.shakeY = 10;
+                    Sound.play('superReady');
+                    const brawler = BRAWLERS[SaveSystem.data.selectedBrawler] || BRAWLERS.ryuji;
+                    this.spawnParticles(this.centerX, this.groundY - 48, '#38bdf8', 16);
+                    this.spawnParticles(this.centerX, this.groundY - 48, '#8b5cf6', 16);
+                    this.spawnFloatingText(this.centerX, this.groundY - 140, '⚡ ULTRA CARICA! [L+R] ⚡', '#7dd3fc');
+                    UI.showToast(`⚡ ${SC_INFO[brawler.id].name} PRONTA! ⚡`);
                     this.updateHUD();
                 },
 
@@ -4413,6 +4775,7 @@
                     if (this.superReadyNotified) return;
                     this.superReadyNotified = true;
                     this.superFlashTimer = 0.35;
+                    this.superFlashSC = false;
                     this.shakeX = 8;
                     this.shakeY = 8;
                     Sound.play('superReady');
@@ -4429,33 +4792,63 @@
                     this.fury = this.furyMax;
                     this.superReadyNotified = false;
                     this.triggerSuperReadyAlert();
+                    if (this.isSC) { this.furyS = this.furySMax; this.scReadyNotified = false; this.triggerSCReadyAlert(); }
                 },
 
-                activateOverdrive() {
-                    this.fury = 0;
-                    this.superReadyNotified = false;
-                    const brawler = BRAWLERS[SaveSystem.data.selectedBrawler] || BRAWLERS.ryuji;
-                    Sound.play('super');
-                    this.setPlayerAnim('SUPER', 0.72);
-                    this.superBeamTimer = 0.65;
-                    this.hitstopTimer = 0.09;
-                    this.shakeX = 14;
-                    this.shakeY = 12;
+                wipeAllEnemies() {
+                    const copy = [...this.enemies];
+                    copy.forEach(e => {
+                        const dir = e.side === 'left' ? -1 : 1;
+                        this.spawnRagdoll(e, dir);
+                        this.score += e.baseScore * this.multiplier;
+                        this.coinsRun += 1;
+                    });
+                    this.enemies = [];
+                },
 
-                    this.spawnFloatingText(this.centerX, this.groundY - 125, `★ ${brawler.overdriveName}! ★`, '#ffd000');
+                activateOverdrive(useSC = false) {
+                    const brawler = BRAWLERS[SaveSystem.data.selectedBrawler] || BRAWLERS.ryuji;
+                    const sc = !!(useSC && this.isSC);
+                    if (sc) {
+                        this.furyS = 0;
+                        this.scReadyNotified = false;
+                        this.scFx = true;
+                    } else {
+                        this.fury = 0;
+                        this.superReadyNotified = false;
+                    }
+                    Sound.play('super');
+                    if (sc) Sound.play('superReady');
+                    this.setPlayerAnim('SUPER', sc ? 0.9 : 0.72);
+                    this.superBeamTimer = sc ? 0.9 : 0.65;
+                    this.hitstopTimer = sc ? 0.14 : 0.09;
+                    this.shakeX = sc ? 20 : 14;
+                    this.shakeY = sc ? 16 : 12;
+
+                    if (sc) {
+                        this.superFlashTimer = 0.3;
+                        this.superFlashSC = true;
+                        this.spawnParticles(this.centerX, this.groundY - 48, '#38bdf8', 18);
+                        this.spawnParticles(this.centerX, this.groundY - 48, '#8b5cf6', 18);
+                        this.spawnFloatingText(this.centerX, this.groundY - 125, `⚡ ${SC_INFO[brawler.id].name}! ⚡`, '#7dd3fc');
+                    } else {
+                        this.spawnFloatingText(this.centerX, this.groundY - 125, `★ ${brawler.overdriveName}! ★`, '#ffd000');
+                    }
 
                     if (brawler.id === 'ryuji') {
-                        const copy = [...this.enemies];
-                        copy.forEach(e => {
-                            const dir = e.side === 'left' ? -1 : 1;
-                            this.spawnRagdoll(e, dir);
-                            this.score += e.baseScore * this.multiplier;
-                            this.coinsRun += 1;
-                        });
-                        this.enemies = [];
+                        this.wipeAllEnemies();
+                        if (sc) {
+                            // seconda onda dopo 1,2s (gestita alla scadenza del timer)
+                            this.overdriveType = 'ryuji';
+                            this.overdriveTimer = 1.25;
+                        }
                     } else {
                         this.overdriveType = brawler.id;
-                        this.overdriveTimer = brawler.id === 'vex' ? 4.0 : (brawler.id === 'titan' ? 5.0 : 6.0);
+                        if (sc) {
+                            this.overdriveTimer = { vex: 5.5, titan: 5.0, kitsune: 7.5, cypher: 7.5 }[brawler.id] || 6.0;
+                        } else {
+                            this.overdriveTimer = brawler.id === 'vex' ? 4.0 : (brawler.id === 'titan' ? 5.0 : 6.0);
+                        }
                     }
                     this.updateHUD();
                 },
@@ -4574,6 +4967,19 @@
                         Sound.play('perfect');
                         this.score += enemy.baseScore * this.multiplier;
                         this.spawnFloatingText(this.centerX, this.groundY - 95, 'MAGMA KO!', '#fb923c');
+                        if (this.scFx) {
+                            const chained = this.enemies.filter(o => o.side === enemy.side && Math.abs(o.x - enemy.x) <= 130);
+                            if (chained.length > 0) {
+                                this.enemies = this.enemies.filter(o => !chained.includes(o));
+                                chained.forEach(o => {
+                                    this.spawnRagdoll(o, dir);
+                                    this.score += o.baseScore * this.multiplier;
+                                    this.coinsRun += 1;
+                                });
+                                this.spawnParticles(this.centerX + enemy.x, this.groundY - 40, '#8b5cf6', 14);
+                                this.spawnFloatingText(this.centerX, this.groundY - 118, `⚡ CATENA x${chained.length}! ⚡`, '#7dd3fc');
+                            }
+                        }
                         this.updateHUD();
                         return;
                     }
@@ -4691,7 +5097,25 @@
                     const superReadyBanner = document.getElementById('hud-super-ready');
                     const furyBox = document.getElementById('hud-fury-box');
 
-                    if (pct >= 100) {
+                    const scBox = document.getElementById('hud-fury2-box');
+                    const scBanner = document.getElementById('hud-sc-ready');
+                    const scReady = !!this.isSC && this.furyS >= this.furySMax && this.overdriveTimer <= 0;
+                    if (scBox) {
+                        scBox.classList.toggle('hidden', !this.isSC);
+                        scBox.classList.toggle('flex', !!this.isSC);
+                        const p2 = Math.min(100, Math.round((this.furyS / (this.furySMax || 1)) * 100));
+                        document.getElementById('hud-fury2-bar').style.width = `${p2}%`;
+                        document.getElementById('hud-fury2-pct').textContent = `${p2}%`;
+                    }
+                    if (scBanner) scBanner.classList.toggle('hidden', !scReady);
+
+                    if (scReady) {
+                        parryBtn.className = 'pad col-span-4 px-btn bg-gradient-to-b from-[#7c3aed] via-[#38bdf8] to-[#e0f2fe] text-[#05040a] flex flex-col items-center justify-center cursor-pointer blink-arcade';
+                        if (parryTop) parryTop.textContent = '⚡ ULTRA ⚡';
+                        if (parryMid) parryMid.textContent = 'SUPERCHARGED!';
+                        if (superReadyBanner) superReadyBanner.classList.add('hidden');
+                        if (furyBox) furyBox.classList.add('border-[#ffd000]');
+                    } else if (pct >= 100) {
                                                 parryBtn.className = 'pad col-span-4 px-btn bg-gradient-to-b from-[#ffd000] via-[#00f5d4] to-[#ff2a85] text-[#05040a] flex flex-col items-center justify-center cursor-pointer blink-arcade';
                         if (parryTop) parryTop.textContent = '★ USA ★';
                         if (parryMid) parryMid.textContent = 'SUPER!';
@@ -4708,7 +5132,9 @@
                     const buffBox = document.getElementById('hud-active-buff');
                     if (this.overdriveTimer > 0) {
                         buffBox.classList.remove('hidden');
-                        document.getElementById('hud-buff-text').textContent = `★ OVERDRIVE (${this.overdriveTimer.toFixed(1)}s) ★`;
+                        document.getElementById('hud-buff-text').textContent = this.scFx
+                            ? `⚡ SUPERCHARGED (${this.overdriveTimer.toFixed(1)}s) ⚡`
+                            : `★ OVERDRIVE (${this.overdriveTimer.toFixed(1)}s) ★`;
                     } else {
                         buffBox.classList.add('hidden');
                     }
@@ -4765,6 +5191,8 @@
                         if (this.animTimer <= 0) this.animState = 'IDLE';
                     }
 
+                    if (this.scFx && this.overdriveTimer <= 0 && this.superBeamTimer <= 0 && this.animState !== 'SUPER') this.scFx = false;
+
                     if (this.koTimer > 0) this.koTimer = Math.min(6, this.koTimer + dt);
                     if (this.state !== 'PLAYING') return;
 
@@ -4781,14 +5209,26 @@
                     if (this.overdriveTimer > 0) {
                         this.overdriveTimer -= dt;
                         if (this.overdriveTimer <= 0) {
+                            const ryujiWave = this.overdriveType === 'ryuji' && this.scFx;
                             this.overdriveTimer = 0;
                             this.overdriveType = null;
+                            if (ryujiWave) {
+                                this.wipeAllEnemies();
+                                this.setPlayerAnim('SUPER', 0.6);
+                                this.superBeamTimer = 0.6;
+                                this.hitstopTimer = 0.1;
+                                this.shakeX = 16;
+                                this.shakeY = 12;
+                                Sound.play('super');
+                                this.spawnParticles(this.centerX, this.groundY - 48, '#38bdf8', 20);
+                                this.spawnFloatingText(this.centerX, this.groundY - 125, '⚡ SECONDO DRAGO! ⚡', '#7dd3fc');
+                            }
                         }
                         this.updateHUD();
                     }
 
                     if (this.combo > 0) {
-                        this.comboTimer -= dt;
+                        if (!(this.scFx && this.overdriveType === 'vex')) this.comboTimer -= dt;
                         const pct = Math.max(0, (this.comboTimer / this.comboMaxTime) * 100);
                         document.getElementById('hud-combo-bar').style.width = `${pct}%`;
                         if (this.comboTimer <= 0) {
@@ -4808,11 +5248,12 @@
                         this.spawnTimer = minInterval + Math.random() * (maxInterval - minInterval);
                     }
 
-                    const slowFactor = this.overdriveType === 'vex' ? 0.5 : 1.0;
+                    const slowFactor = this.overdriveType === 'vex' ? (this.scFx ? 0.35 : 0.5) : 1.0;
                     const brawlerId = SaveSystem.data.selectedBrawler;
 
                     for (let i = this.enemies.length - 1; i >= 0; i--) {
                         const e = this.enemies[i];
+                        if (!e) continue;
                         if (e.flashTimer > 0) e.flashTimer -= dt;
                         const dir = e.side === 'left' ? 1 : -1;
                         e.x += dir * e.speed * slowFactor * dt;
@@ -4859,7 +5300,7 @@
 
                     // Flash a tutto schermo quando la Super raggiunge il 100%!
                     if (this.superFlashTimer > 0) {
-                        ctx.fillStyle = `rgba(255, 208, 0, ${Math.min(0.45, this.superFlashTimer * 1.2)})`;
+                        ctx.fillStyle = `rgba(${this.superFlashSC ? '120, 150, 255' : '255, 208, 0'}, ${Math.min(0.45, this.superFlashTimer * 1.2)})`;
                         ctx.fillRect(0, 0, this.width, this.height);
                     }
 
@@ -5012,6 +5453,14 @@
                         PixelRenderer.drawReadyAura(ctx, px, py, activePal.aura, this.globalTime);
                     }
 
+                    // AURA SUPERCHARGED (azzurro/viola): sempre accennata se posseduta, piena quando ULTRA è pronta o attiva
+                    if (this.state !== 'GAMEOVER' && this.animState !== 'SUPER' && (SaveSystem.data.supercharged || {})[brawler.id]) {
+                        const scReadyNow = this.state === 'PLAYING' && this.furyS >= this.furySMax && this.overdriveTimer <= 0;
+                        const scActiveNow = this.scFx && this.overdriveTimer > 0;
+                        const strong = scReadyNow || scActiveNow;
+                        PixelRenderer.drawSCAura(ctx, px, py, this.globalTime, strong ? 1 : (this.state === 'MENU' ? 0.55 : 0.35), strong, scReadyNow);
+                    }
+
                     if (this.overdriveTimer > 0 && this.animState !== 'SUPER') {
                         if (this.overdriveType === 'vex') {
                             ctx.fillStyle = activePal.aura + '28';
@@ -5031,7 +5480,7 @@
                     }
 
                     if (this.animState === 'SUPER' || this.superBeamTimer > 0) {
-                        PixelRenderer.drawCustomSuperFX(ctx, brawler.id, px, py, this.width, this.globalTime, scale, activePal);
+                        PixelRenderer.drawCustomSuperFX(ctx, brawler.id, px, py, this.width, this.globalTime, scale, activePal, this.scFx);
                     } else if (this.animState === 'ATTACK_LEFT') {
                         const at = Math.min(1, Math.max(0, 1 - this.animTimer / (this.animDuration || 0.3)));
                         PixelRenderer.drawAttack(ctx, brawler.id, px, py, -1, false, scale, activePal, at, this.globalTime);
