@@ -4651,14 +4651,31 @@
                     }
                 },
 
+                // Premendo L+R per la super, i nemici già a tiro (uno per lato + eventuali charger) vengono comunque colpiti
+                strikeBeforeSuper() {
+                    const range = this.hitRange;
+                    const near = (side) => this.enemies
+                        .filter(e => e.side === side && Math.abs(e.x) <= range)
+                        .sort((a, b) => Math.abs(a.x) - Math.abs(b.x))[0];
+                    const targets = new Set();
+                    this.enemies.filter(e => e.type === 'charger' && Math.abs(e.x) <= range * 1.18).forEach(c => targets.add(c));
+                    const leftT = near('left'), rightT = near('right');
+                    if (leftT) targets.add(leftT);
+                    if (rightT) targets.add(rightT);
+                    targets.forEach(t => this.hitEnemy(t, true));
+                    if (leftT && rightT) this.spawnFloatingText(this.centerX, this.groundY - 108, 'TWIN STRIKE!', '#00f5d4');
+                },
+
                 executeSimultaneousAction() {
                     if (this.state !== 'PLAYING' || this.paused || this.whiffTimer > 0) return;
 
-                    if (this.isSC && this.furyS >= this.furySMax && this.overdriveTimer <= 0) {
+                    if (this.isSC && this.furyS >= this.furySMax && this.fury >= this.furyMax && this.overdriveTimer <= 0) {
+                        this.strikeBeforeSuper();
                         this.activateOverdrive(true);
                         return;
                     }
                     if (this.fury >= this.furyMax) {
+                        this.strikeBeforeSuper();
                         this.activateOverdrive(false);
                         return;
                     }
@@ -4757,13 +4774,17 @@
                             const prevFury = this.fury;
                             this.fury = Math.min(this.furyMax, this.fury + (isPerfect ? 1.7 : 1));
                             if (prevFury < this.furyMax && this.fury >= this.furyMax) {
-                                this.triggerSuperReadyAlert();
+                                if (this.isSC && this.furyS >= this.furySMax) this.triggerSCReadyAlert();
+                                else this.triggerSuperReadyAlert();
                             }
                         }
                         // Barra ULTRA: si carica in parallelo, non scende mai (neanche se sbagli o vieni colpito)
                         if (this.isSC && !this.scFx && this.furyS < this.furySMax) {
                             this.furyS = Math.min(this.furySMax, this.furyS + (isPerfect ? 1.7 : 1));
-                            if (this.furyS >= this.furySMax) this.triggerSCReadyAlert();
+                            if (this.furyS >= this.furySMax) {
+                                if (this.fury >= this.furyMax) this.triggerSCReadyAlert();
+                                else this.spawnFloatingText(this.centerX, this.groundY - 140, '⚡ ULTRA 100%! CARICA ANCHE LA SUPER', '#7dd3fc');
+                            }
                         }
                     }
 
@@ -4826,8 +4847,11 @@
                     const brawler = BRAWLERS[SaveSystem.data.selectedBrawler] || BRAWLERS.ryuji;
                     const sc = !!(useSC && this.isSC);
                     if (sc) {
+                        // la super ULTRA consuma entrambe le barre
                         this.furyS = 0;
+                        this.fury = 0;
                         this.scReadyNotified = false;
+                        this.superReadyNotified = false;
                         this.scFx = true;
                     } else {
                         this.fury = 0;
@@ -5163,7 +5187,7 @@
 
                     const scBox = document.getElementById('hud-fury2-box');
                     const scBanner = document.getElementById('hud-sc-ready');
-                    const scReady = !!this.isSC && this.furyS >= this.furySMax && this.overdriveTimer <= 0;
+                    const scReady = !!this.isSC && this.furyS >= this.furySMax && this.fury >= this.furyMax && this.overdriveTimer <= 0;
                     if (scBox) {
                         scBox.classList.toggle('hidden', !this.isSC);
                         scBox.classList.toggle('flex', !!this.isSC);
@@ -5528,7 +5552,7 @@
 
                     // AURA SUPERCHARGED (azzurro/viola): sempre accennata se posseduta, piena quando ULTRA è pronta o attiva
                     if (this.state !== 'GAMEOVER' && this.animState !== 'SUPER' && (SaveSystem.data.supercharged || {})[brawler.id]) {
-                        const scReadyNow = this.state === 'PLAYING' && this.furyS >= this.furySMax && this.overdriveTimer <= 0;
+                        const scReadyNow = this.state === 'PLAYING' && this.furyS >= this.furySMax && this.fury >= this.furyMax && this.overdriveTimer <= 0;
                         const scActiveNow = this.scFx && this.overdriveTimer > 0;
                         const strong = scReadyNow || scActiveNow;
                         PixelRenderer.drawSCAura(ctx, px, py, this.globalTime, strong ? 1 : (this.state === 'MENU' ? 0.55 : 0.35), strong, scReadyNow);
